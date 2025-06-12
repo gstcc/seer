@@ -1,0 +1,8 @@
+Idea: A plugin that allows users to work on the same file using pynvim
+
+Server: Use Python for backend collaboration, networking, and orchestration. Here is the actual document, handle changes, send changes
+Client: Use pynvim to connect to session/server, send buffer changes, rececive remote edits
+
+Should use some sort of auth (like live share vscode)
+socket.io or websockets?
+
