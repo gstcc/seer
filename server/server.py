@@ -1,4 +1,5 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
@@ -25,7 +26,7 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-@app.websocket("ws/{user}")
+@app.websocket("/ws/{user}")
 async def websocket_endpoint(websocket: WebSocket, user: str):
     await manager.connect(websocket)
     try:
