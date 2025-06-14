@@ -6,3 +6,5 @@ Client: Use pynvim to connect to session/server, send buffer changes, rececive r
 Should use some sort of auth (like live share vscode)
 socket.io or websockets?
 
+Need to write plugin in lua that attaches to buf_attach and then does a callback to python plugin part which then can handle the rest
+Should probably switch to on_bytes instead of on_lines as it contains more information
