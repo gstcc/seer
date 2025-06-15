@@ -42,14 +42,16 @@ class LiveShare(object):
     def on_lines(self, *args):
         event, buf, changed_tick, firstline, lastline, new_lastline, bytecount = args
 
-        old_lines = self.nvim.api.buf_get_lines(buf, firstline, lastline, False)
+        new_lines = self.nvim.api.buf_get_lines(buf, firstline, lastline, False)
 
         # Log the change
         self.nvim.out_write(
             f"[on_lines] changed_tick={changed_tick}, "
             f"firstline={firstline}, lastline={lastline}, new_lastline={new_lastline}, "
-            f"old_lines={old_lines}\n"
+            f"old_lines={new_lines}\n"
         )
+        if self.connector:
+            asyncio.create_task(self.connector.send({"test": new_lines}))
 
     @pynvim.rpc_export("handle_detach")
     def on_detach(self, buf):
@@ -88,7 +90,7 @@ class LiveShare(object):
     @pynvim.autocmd("BufEnter", pattern="*.py", eval='expand("<afile>")', sync=False)
     def on_buf_enter(self, filename: str):
         if self.connector:
-            asyncio.create_task(self.connector.send({"test": "res"}))
+            asyncio.create_task(self.connector.send({"test": filename}))
         else:
             self.nvim.err_write("[LiveShare] Connector is not initialized.\n")
         self.nvim.out_write("testplugin is in " + filename + "\n")
