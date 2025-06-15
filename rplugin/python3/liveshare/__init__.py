@@ -71,17 +71,26 @@ class LiveShare(object):
 
     @pynvim.command("JoinSession", nargs="*")
     def join_session(self, args):
-        # Example: assume first arg is user, second host, third port
         user, host, port = args[0], args[1], int(args[2])
         buf = self.nvim.current.buffer
 
         self.connector = self.LiveShareConnector(
             user, host, port, owner=self.owner, nvim=self.nvim, buffer=buf
         )
-        asyncio.create_task(self.connector.join_session())
 
-    @pynvim.autocmd("BufEnter", pattern="*.py", eval='expand("<afile>")', sync=True)
+        async def join_and_send():
+            if self.connector:
+                await self.connector.join_session()
+                await self.connector.send({"test": "resfirst"})
+
+        asyncio.create_task(join_and_send())
+
+    @pynvim.autocmd("BufEnter", pattern="*.py", eval='expand("<afile>")', sync=False)
     def on_buf_enter(self, filename: str):
+        if self.connector:
+            asyncio.create_task(self.connector.send({"test": "res"}))
+        else:
+            self.nvim.err_write("[LiveShare] Connector is not initialized.\n")
         self.nvim.out_write("testplugin is in " + filename + "\n")
 
     @pynvim.function("LiveShareGetChannelId", sync=True)
