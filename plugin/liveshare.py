@@ -1,4 +1,5 @@
 from .connector import Connector
+from .server import ServerController
 import pynvim
 import asyncio
 import json
@@ -37,6 +38,7 @@ class LiveShare(object):
         self.attached: bool = False
         self.nvim.out_write("LiveShare plugin loaded\n")
         self.connector = None
+        self.server = ServerController()
 
     @pynvim.rpc_export("handle_change")
     def on_lines(self, *args):
@@ -64,11 +66,14 @@ class LiveShare(object):
             self.nvim.out_write("Already watching buffer\n")
             return
         self.attached = True
-        # self.nvim.out_write(f"Started server, " f"Buffer={self.nvim.current.buffer}\n")
+        self.server.start()
+        self.nvim.out_write(f"Started server, " f"Buffer={self.nvim.current.buffer}\n")
 
     @pynvim.command("StopServer", nargs="*")
     def stop_server(self, args):
         self.attached = False
+        if self.server:
+            self.server.stop()
         self.nvim.out_write(f"Stopped server\n")
 
     @pynvim.command("JoinSession", nargs="*")
