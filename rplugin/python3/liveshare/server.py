@@ -5,6 +5,27 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 app = FastAPI()
 
 
+class EventBus:
+    def __init__(self):
+        self.listeners = {}
+
+    def on(self, event_name: str):
+        def decorator(callback):
+            if event_name not in self.listeners:
+                self.listeners[event_name] = []
+            self.listeners[event_name].append(callback)
+            return callback
+
+        return decorator
+
+    async def emit(self, event_name: str, *args, **kwargs):
+        for callback in self.listeners.get(event_name, []):
+            await callback(*args, **kwargs)
+
+
+event_bus = EventBus()
+
+
 class ConnectionManager:
     def __init__(self):
         self.active_connections: list[WebSocket] = []
@@ -33,7 +54,7 @@ async def websocket_endpoint(websocket: WebSocket, user: str):
     try:
         while True:
             data = await websocket.receive_text()
-            print(data)
+            await event_bus.emit("message_received", user=user, message=data)
             await manager.send_personal_message(f"You wrote: {data}", websocket)
             await manager.broadcast(f"Client #{user} says: {data}")
     except WebSocketDisconnect:
@@ -43,10 +64,14 @@ async def websocket_endpoint(websocket: WebSocket, user: str):
 
 @app.get("/")
 async def root():
+    try:
+        await event_bus.emit("message_received")
+    except Exception as e:
+        print(f"[ERROR] Emit failed: {e}")
+        return {"message": "Failed to emit event", "error": e}
     return {"message": "Hello World"}
 
 
-# --- Server Controller ---
 class ServerController:
     def __init__(self, host="127.0.0.1", port=8000):
         self.config = uvicorn.Config(app, host=host, port=port, log_level="info")

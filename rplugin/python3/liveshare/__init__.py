@@ -1,5 +1,5 @@
 from .connector import Connector
-from .server import ServerController
+from .server import ServerController, event_bus
 import pynvim
 import asyncio
 import json
@@ -75,6 +75,11 @@ class LiveShare(object):
         if self.server:
             self.server.stop()
         self.nvim.out_write(f"Stopped server\n")
+
+    @event_bus.on("message_received")
+    async def handle_message(user, message):
+        self.nvim.out_write(f"Stopped server\n")
+        # print(f"[EVENT] {user} sent: {message}")
 
     @pynvim.command("JoinSession", nargs="*")
     def join_session(self, args):
